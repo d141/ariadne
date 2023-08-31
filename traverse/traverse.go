@@ -3,6 +3,8 @@ package traverse
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"path/filepath"
 )
 
@@ -10,6 +12,7 @@ var (
 	dir   string
 	noGit bool
 	skip  string
+	gitStatus bool
 )
 
 // SetDir sets the directory
@@ -43,4 +46,30 @@ func Traverse() error {
 		printDirectoryTree(path, info)
 		return nil
 	})
+}
+
+
+
+func SetGitStatus(gs bool) {
+    gitStatus = gs
+}
+
+func getGitStatus(path string) (status string, err error) {
+	cmd := exec.Command("git", "ls-files", "--other", "--modified", "--exclude-standard", path)
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	if len(output) > 0 {
+		return "Untracked or Modified", nil
+	}
+
+	cmd = exec.Command("git", "log", "-1", "--format=%h - %cr", path)
+	output, err = cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	
+	return strings.TrimSpace(string(output)), nil
 }
